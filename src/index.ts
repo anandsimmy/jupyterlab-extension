@@ -13,11 +13,11 @@ const extension: JupyterFrontEndPlugin<void> = {
     const content= new Widget()
     const widget= new MainAreaWidget({ content })
     widget.id= 'apod-jupyterlab'
-    widget.title.label= 'Astronomy Picture'
+    widget.title.label= 'Random Astronomy Picture'
     widget.title.closable= true
     const command:string= 'apod:open'
     app.commands.addCommand(command, {
-      label: 'Astrnomy Picture',
+      label: 'Astronomy Picture',
       execute:() => {
         if(!widget.isAttached){
           app.shell.add(widget, 'main')
