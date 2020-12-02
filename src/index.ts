@@ -1,7 +1,7 @@
-import { JupyterFrontEnd, JupyterFrontEndPlugin } from '@jupyterlab/application';
-import { ICommandPalette, MainAreaWidget } from '@jupyterlab/apputils';
+import { JupyterFrontEnd, JupyterFrontEndPlugin, ILayoutRestorer } from '@jupyterlab/application';
+import { ICommandPalette, MainAreaWidget, WidgetTracker } from '@jupyterlab/apputils';
 import { Widget } from '@lumino/widgets'
-import { Message } from '@lumino/messaging';
+import { Message } from '@lumino/messaging'; 
 
 interface APODResponse{
     copyright: string;
@@ -58,37 +58,50 @@ class APODWidget extends Widget {
   }
 }
 
-function activate(app: JupyterFrontEnd, palette: ICommandPalette) {
+function activate(app: JupyterFrontEnd, palette: ICommandPalette, restorer: ILayoutRestorer) {
   console.log('JupyterLab extension jupyterlab_apod is activated!');
 
-  const content = new APODWidget();
-  const widget = new MainAreaWidget({content});
-  widget.id = 'apod-jupyterlab';
-  widget.title.label = 'Astronomy Picture';
-  widget.title.closable = true;
-
+  let widget: MainAreaWidget<APODWidget>
+  
   const command: string = 'apod:open';
   app.commands.addCommand(command, {
     label: 'Random Astronomy Picture',
     execute: () => {
+      if(!widget){
+        const content = new APODWidget();
+        widget = new MainAreaWidget({content});
+        widget.id = 'apod-jupyterlab';
+        widget.title.label = 'Astronomy Picture';
+        widget.title.closable = true;
+      }
+      if(!tracker.has(widget)){
+        tracker.add(widget)
+      }
       if (!widget.isAttached) {
         app.shell.add(widget, 'main');
       }
-
-      content.update();
-
+      //update content
+      widget.content.update();
       app.shell.activateById(widget.id);
     }
   });
 
   palette.addItem({ command, category: 'Tutorial' });
+
+  let tracker= new WidgetTracker<MainAreaWidget<APODWidget>>({
+    namespace: 'apod'
+  })
+  restorer.restore(tracker, {
+    command,
+    name: ()=>'apod'
+  })
 }
 
 
 const extension: JupyterFrontEndPlugin<void> = {
   id: 'apod-lab-extension',
   autoStart: true,
-  requires: [ICommandPalette],
+  requires: [ICommandPalette, ILayoutRestorer],
   activate: activate
 };
 
